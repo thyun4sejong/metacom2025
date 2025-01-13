@@ -3,8 +3,15 @@ services:
     build: .
     image: isaac-sim-ros2-humble:latest
     runtime: nvidia
+    network_mode: "host"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
     environment:
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=all
       - ROS_DOMAIN_ID=0
       - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
       - ACCEPT_EULA=Y
