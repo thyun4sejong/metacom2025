@@ -30,22 +30,26 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Add ROS 2 GPG key
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | apt-key add -
+RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
 
 # Add ROS 2 repository to sources.list.d
-RUN echo "deb http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list
-
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+    http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list
 
 
 # Install additional dependencies for Isaac Sim and ROS 2 integration
 RUN apt-get update && apt-get install -y \
     python3-pip \
-    && pip3 install --no-cache-dir \
+    ros-humble-rmw-fastrtps-cpp \
+    ros-humble-vision-msgs \
+    libspdlog-dev
+
+RUN pip3 install --no-cache-dir \
         rosdep \
         setuptools \
-        vcstool \
-        ros-humble-rmw-fastrtps-cpp \
-        && apt-get clean && rm -rf /var/lib/apt/lists/*
+        vcstool
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set up Isaac Sim headless and ROS environment
 SHELL ["/bin/bash", "-c"]
