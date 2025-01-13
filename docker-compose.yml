@@ -1,0 +1,14 @@
+services:
+  isaac_sim_ros2_navigation:
+    build: .
+    image: isaac-sim-ros2-humble:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - ROS_DOMAIN_ID=0
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - ACCEPT_EULA=Y
+    volumes:
+      - ./workspace:/workspace
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    # command: ["/isaac-sim/python.sh", "-m", "omni.isaac.sim.headless.app", "--/app/renderer/headless=true", "--/workspace/ros2_navigation_launch/run_navigation_example.py"]
