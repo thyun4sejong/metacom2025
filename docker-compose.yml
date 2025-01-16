@@ -1,21 +1,36 @@
 services:
-  isaac_sim_ros2_navigation:
+  isaac_sim:
     build: .
-    image: isaac-sim-ros2-humble:latest
+    image: isaac-sim:4.2.0-ubuntu22.04
     runtime: nvidia
+    environment:
+      - ACCEPT_EULA=Y
+      - PRIVACY_CONSENT=Y
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+      - AMENT_PREFIX_PATH=/isaac-sim/exts/omni.isaac.ros2_bridge/humble
+      - LD_LIBRARY_PATH=/isaac-sim/exts/omni.isaac.ros2_bridge/humble/lib:$LD_LIBRARY_PATH
+      - PYTHONPATH=/isaac-sim/kit/python/lib/python3.10/site-packages:/isaac-sim/exts
+      - USD_PLUGIN_PATH=/isaac-sim/exts/omni.usd.schema.isaac/plugins
+      - ROS_DISTRO=humble
+      - EXTENSIONS=omni.isaac.ros2_bridge
+    volumes:
+      - ./simulation_app:/simulation_app:rw
+      - $HOME/.Xauthority:/root/.Xauthority:rw
+      - ./workspace/cache/kit:/isaac-sim/kit/cache:rw
+      - ./workspace/cache/ov:/root/.cache/ov:rw
+      - ./workspace/cache/pip:/root/.cache/pip:rw
+      - ./workspace/cache/glcache:/root/.cache/nvidia/GLCache:rw
+      - ./workspace/cache/computecache:/root/.nv/ComputeCache:rw
+      - ./workspace/logs:/root/.nvidia-omniverse/logs:rw
+      - ./workspace/data:/root/.local/share/ov/data:rw
+      - ./workspace/documents:/root/Documents:rw      
     network_mode: "host"
+    entrypoint: ["/isaac-sim/python.sh", "/simulation_app/codes/rtx_lidar.py"]
     deploy:
       resources:
         reservations:
           devices:
             - capabilities: [gpu]
-    environment:
-      - NVIDIA_DRIVER_CAPABILITIES=all
-      - NVIDIA_VISIBLE_DEVICES=all
-      - ROS_DOMAIN_ID=0
-      - RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-      - ACCEPT_EULA=Y
-    volumes:
-      - ./workspace:/workspace
-      - /tmp/.X11-unix:/tmp/.X11-unix
-    # command: ["/isaac-sim/python.sh", "-m", "omni.isaac.sim.headless.app", "--/app/renderer/headless=true", "--/workspace/ros2_navigation_launch/run_navigation_example.py"]

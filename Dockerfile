@@ -1,65 +1,38 @@
-# Stage 1: Base ROS 2 Humble setup
-FROM osrf/ros:humble-desktop as ros_base
+ARG DEBIAN_FRONTEND=noninteractive
+ARG ISAACSIM_VERSION=4.2.0
 
-# Install additional ROS 2 packages required for navigation
-RUN apt-get update && apt-get install -y \
-    ros-humble-navigation2 \
-    ros-humble-nav2-bringup \
-    python3-colcon-common-extensions \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+# NVIDIA Isaac Sim 기반 이미지 사용
+# https://catalog.ngc.nvidia.com/orgs/nvidia/containers/isaac-sim
+FROM nvcr.io/nvidia/isaac-sim:${ISAACSIM_VERSION} AS isaac-sim
 
-# Stage 2: Isaac Sim 4.2 setup
-FROM nvcr.io/nvidia/isaac-sim:2023.1.0
+# OMNI_SERVER 
+# ENV OMNI_SERVER=http://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.2.0
+# ENV OMNI_SERVER=omniverse://localhost/NVIDIA/Assets/Isaac/4.2.0
+# ENV OMNI_USER=admin
+# ENV OMNI_PASS=admin
+# ENV MIN_DRIVER_VERSION=525.60.11
 
-# Copy ROS 2 installation from the ros_base stage
-COPY --from=ros_base /opt/ros/humble /opt/ros/humble
-
-# Set up environment variables
-ENV DEBIAN_FRONTEND=noninteractive \
-    NVIDIA_DRIVER_CAPABILITIES=all \
-    ROS_DISTRO=humble
-
-ENV LD_LIBRARY_PATH=/opt/ros/humble/lib:$LD_LIBRARY_PATH
-
-
-# Install required dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    gnupg2 \
-    lsb-release \
-    && rm -rf /var/lib/apt/lists/*
-
-# Add ROS 2 GPG key
-RUN curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
-
-# Add ROS 2 repository to sources.list.d
-RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
-    http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2-latest.list
-
-
-# Install additional dependencies for Isaac Sim and ROS 2 integration
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    ros-humble-rmw-fastrtps-cpp \
-    ros-humble-vision-msgs \
-    libspdlog-dev
-
-RUN pip3 install --no-cache-dir \
-        rosdep \
-        setuptools \
-        vcstool
-
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Set up Isaac Sim headless and ROS environment
-SHELL ["/bin/bash", "-c"]
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
-
-# Copy navigation-related launch files and scripts
-COPY ./workspace/ros2_navigation_launch /workspace/ros2_navigation_launch
-
-# Set the working directory to Isaac Sim's user space
+# 작업 디렉터리 설정
 WORKDIR /isaac-sim
 
-# Default command to launch Isaac Sim and ROS 2 Navigation
-CMD ["/isaac-sim/python.sh", "-m", "omni.isaac.sim.headless.app", "--/app/renderer/headless=true", "--/workspace/ros2_navigation_launch/run_navigation_example.py"]
+# 필요한 패키지 설치
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    x11-xserver-utils \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# pip 최신 버전으로 업그레이드
+RUN /isaac-sim/kit/python/bin/python3 -m pip install --upgrade pip
+
+# PYTHONPATH 설정
+ENV PYTHONPATH=/isaac-sim/kit/python/lib/python3.10/site-packages:/isaac-sim/exts
+
+# USD Plugin Path 설정
+ENV USD_PLUGIN_PATH=/isaac-sim/exts/omni.usd.schema.isaac/plugins
+
+# Add symlink
+RUN ln -s exts/omni.isaac.examples/omni/isaac/examples extension_examples
+
+# Default entrypoint to launch headless with streaming
+ENTRYPOINT ["/isaac-sim/runapp.sh"]
