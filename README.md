@@ -1,21 +1,43 @@
 
 
-# Build the image:
+# Build image based on isaac-sim 4.2.0 image provided by nvidia nvcr.io:
 ```
 docker login nvcr.io
-docker build --pull -t \
-  isaac-sim:4.2.0-ubuntu22.04 \
+docker build --pull -t isaac-sim:4.2.0-ubuntu22.04 \
   --build-arg ISAACSIM_VERSION=4.2.0 \
   --file Dockerfile .
 ```
 
+# Write simulation app
+
+## simulation code
+
+./simulation_app/codes is for simulation codes. run_simulation_app.py will be called when the container startup time.
+
+
+## user's custom models 
+
+usd files can be stored on ./simulation_app/models.
+you can access models with the path /simulation_app/models under docker container environment.
+
+## user's other files
+
+./simulation_app directory is binded to /simulation_app under docker container environment. use this directory to store user's data, configuration, etc.
+
+
 # Run container 
-## windowed, docker compose
+
+below command will launch isaac-sim and execute /simulation_app/codes/run_simulation_app.py
 ```
 docker compose up
 ```
 
-## Alternatives #1 headless app:
+
+
+
+# Just FYI ...
+
+## launch headless isaac-sim using docker image which is built by ./Dockerfile
 ```
 docker run --name isaac-sim --entrypoint bash -it --gpus all -e "ACCEPT_EULA=Y" --rm --network=host \
   -e "PRIVACY_CONSENT=Y" -e "PRIVACY_USERID=<email>" \
@@ -31,7 +53,7 @@ docker run --name isaac-sim --entrypoint bash -it --gpus all -e "ACCEPT_EULA=Y" 
 	./isaac-sim.headless.native.sh --allow-root
 ```
 
-## Alternatives #2 windowed app:
+## launch windowed isaac-sim using docker image which is built by ./Dockerfile
 ```
 xhost +localhost:
 docker run --name isaac-sim --entrypoint bash -it --gpus all -e "ACCEPT_EULA=Y" --rm --network=host \

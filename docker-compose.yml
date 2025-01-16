@@ -1,5 +1,5 @@
 services:
-  isaac_sim:
+  metacom2025-sejong:
     build: .
     image: isaac-sim:4.2.0-ubuntu22.04
     runtime: nvidia
@@ -28,7 +28,7 @@ services:
       - ./workspace/data:/root/.local/share/ov/data:rw
       - ./workspace/documents:/root/Documents:rw      
     network_mode: "host"
-    entrypoint: ["/isaac-sim/python.sh", "/simulation_app/codes/rtx_lidar.py"]
+    entrypoint: ["/isaac-sim/python.sh", "/simulation_app/codes/run_simulation_app.py"]
     deploy:
       resources:
         reservations:
